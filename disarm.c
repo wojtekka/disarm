@@ -294,8 +294,9 @@ static int single_data_swap(unsigned int pc, unsigned int insn, char *buf, size_
 static int branch_and_exchange(unsigned int pc, unsigned int insn, char *buf, size_t buf_len)
 {
 	const char *rn = register_name(insn >> 0);
+	const char *l = ((insn >> 9) & 1) ? "l" : "";
 
-	snprintf(buf, buf_len, "bex%s %s", condition(insn), rn);
+	snprintf(buf, buf_len, "b%sx%s %s", l, condition(insn), rn);
 
 	return 1;
 }
@@ -433,6 +434,9 @@ static int software_interrupt(unsigned int pc, unsigned int insn, char *buf, siz
 
 int disarm(unsigned int pc, unsigned int insn, char *buf, size_t buf_len)
 {
+	if ((insn & 0x0ffffff0) == 0x012fff10)
+		return branch_and_exchange(pc, insn, buf, buf_len);
+
 	if ((insn & 0x0c000000) == 0x00000000)
 		return data_processing(pc, insn, buf, buf_len);
 
@@ -444,9 +448,6 @@ int disarm(unsigned int pc, unsigned int insn, char *buf, size_t buf_len)
 	
 	if ((insn & 0x0fb00ff0) == 0x01000090)
 		return single_data_swap(pc, insn, buf, buf_len);
-
-	if ((insn & 0x0ffffff0) == 0x012fff10)
-		return branch_and_exchange(pc, insn, buf, buf_len);
 
 	if ((insn & 0x0e000090) == 0x00000090)
 		return halfword_data_transfer(pc, insn, buf, buf_len);
