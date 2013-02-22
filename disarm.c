@@ -375,9 +375,12 @@ static int block_data_transfer(unsigned int pc, unsigned int insn, char *buf, si
 {
 	const char *s = ((insn >> 22) & 1) ? "^" : "";
 	const char *w = ((insn >> 21) & 1) ? "!" : "";
-	const char *name = ((insn >> 20) & 1) ? "ldm" : "stm";
-	const char *stubs[4] = { "ea", "ed", "fa", "fd" };
-	const char *stub = stubs[(insn >> 23) & 3];
+	int load = (insn >> 20) & 1;
+	const char *name = (load) ? "ldm" : "stm";
+	const char *ldm_stubs[4] = { "fa", "fd", "ea", "ed" };
+	const char *stm_stubs[4] = { "ed", "ea", "fd", "fa" };
+	int stub_idx = (insn >> 23) & 3;
+	const char *stub = (load) ? ldm_stubs[stub_idx] : stm_stubs[stub_idx];
 	char tmp_buf[64];
 
 	snprintf(buf, buf_len, "%s%s%s %s%s, {%s}%s", name, condition(insn), stub, register_name(insn >> 16), w, register_list(insn & 0xffff, tmp_buf, sizeof(tmp_buf)), s);
